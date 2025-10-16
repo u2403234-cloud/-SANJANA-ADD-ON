@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium BMI Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="credit-badge">
+        <div class="credit-label">Project by</div>
+        <div class="credit-name">Sanjana Jose</div>
+        <div class="credit-course">CS-Delta</div>
+    </div>
+    
+    <div class="container">
+        <div class="calculator-card">
+            <h1>💪 BMI Calculator</h1>
+            <p class="subtitle">Calculate your Body Mass Index with precision</p>
+            
+            <form id="bmiForm">
+                <div class="input-group">
+                    <label for="height">📏 Height (cm)</label>
+                    <input type="number" id="height" name="height" placeholder="e.g., 170" min="50" max="300" step="0.1" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="weight">⚖️ Weight (kg)</label>
+                    <input type="number" id="weight" name="weight" placeholder="e.g., 70" min="20" max="500" step="0.1" required>
+                </div>
+                
+                <button type="submit" class="calculate-btn">✨ Calculate BMI</button>
+            </form>
+            
+            <div id="result" class="result-container" style="display: none;">
+                <h2>📊 Your BMI Result</h2>
+                <div class="bmi-value" id="bmiValue">--</div>
+                <div class="bmi-category" id="bmiCategory">--</div>
+                
+                <div class="bmi-scale">
+                    <div class="scale-item">
+                        <div class="scale-color underweight"></div>
+                        <span><strong>Underweight</strong><br>&lt; 18.5</span>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-color normal"></div>
+                        <span><strong>Normal</strong><br>18.5 - 24.9</span>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-color overweight"></div>
+                        <span><strong>Overweight</strong><br>25 - 29.9</span>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-color obese"></div>
+                        <span><strong>Obese</strong><br>≥ 30</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="error" class="error-message" style="display: none;">⚠️ <span id="errorText"></span></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('bmiForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const height = document.getElementById('height').value;
+            const weight = document.getElementById('weight').value;
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            const errorText = document.getElementById('errorText');
+            const btn = document.querySelector('.calculate-btn');
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            btn.textContent = '⏳ Calculating...';
+            btn.disabled = true;
+            try {
+                const formData = new FormData();
+                formData.append('height', height);
+                formData.append('weight', weight);
+                const response = await fetch('/calculate', { method: 'POST', body: formData });
+                const data = await response.json();
+                btn.textContent = '✨ Calculate BMI';
+                btn.disabled = false;
+                if (data.success) {
+                    let color;
+                    switch(data.category.toLowerCase()) {
+                        case 'underweight': color = '#3498db'; break;
+                        case 'normal': color = '#2ecc71'; break;
+                        case 'overweight': color = '#f39c12'; break;
+                        case 'obese': color = '#e74c3c'; break;
+                        default: color = '#666';
+                    }
+                    setTimeout(() => {
+                        document.getElementById('bmiValue').textContent = data.bmi;
+                        document.getElementById('bmiValue').style.color = color;
+                        document.getElementById('bmiCategory').textContent = data.category;
+                        document.getElementById('bmiCategory').style.backgroundColor = color;
+                        resultDiv.style.display = 'block';
+                        setTimeout(() => resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+                    }, 200);
+                } else {
+                    errorText.textContent = data.error || 'An error occurred';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                btn.textContent = '✨ Calculate BMI';
+                btn.disabled = false;
+                errorText.textContent = 'Failed to connect to server';
+                errorDiv.style.display = 'block';
+            }
+        });
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() { this.parentElement.style.transform = 'scale(1.02)'; });
+            input.addEventListener('blur', function() { this.parentElement.style.transform = 'scale(1)'; });
+        });
+    </script>
+</body>
+</html>
